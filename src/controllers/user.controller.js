@@ -7,6 +7,23 @@ import fs from 'fs';
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 
+
+
+const generatAccessAndRefreshToken = async(userId)=>{
+    try {
+        const user = await User.findById(userId);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+        user.refreshToken = refreshToken;
+        user.save({validateBeforeSave:false});
+
+        return {accessToken,refreshToken}
+
+    } catch (error) {
+        throw new ApiError(500)
+    }
+}
+
 const registerUser = asyncHandler(async(req,res)=>{
      // get user details from frontend
      // validation - not empty
@@ -70,6 +87,62 @@ const registerUser = asyncHandler(async(req,res)=>{
 });
 
 
+const loginUser = asyncHandler(async(req,res)=>{
+    // Data from frontend(postman)
+    // Validate - not empty
+    // generate access and refresh token
+    // set refresh token in cookie
+    // return response with access token and user details
+    const {email, password} = req.body;
+
+    if([email,password].some((fields)=> fields.trim() === "")){
+        throw new ApiError(400,"All Fields are Required");
+    }
+
+    const user = await User.findOne({email});
+    
+    if(!user){
+        throw new ApiError(404,"User Not Found");
+    }
+
+    const isPasswordValid = await user.isPasswordCorrect(password);
+
+    if(!isPasswordValid){
+        throw new ApiError(401,"invalid user credentials");
+    }
+
+    const {refreshToken,accessToken} = await generatAccessAndRefreshToken(user._id);
+
+    const loginUser = await User.findById(user._id).select("-password -refreshToken")
+
+    const options = {
+        httpOnly:true,
+        secure:true
+    }
+
+
+    return res.status(200)
+    .cookie("refreshToken",refreshToken,options)
+    .cookie("accessToken",accessToken,options)
+    .json({
+        status: "success",
+        data: {
+            user: loginUser,
+            accessToken,
+            refreshToken
+        },
+        message: "User Logged In Successfully"
+    });
+    
+});
+
+const logoutUser = asyncHandler(async(req,res)=>{
+    
+
+});
+
+
 export {
-    registerUser
+    registerUser,
+    loginUser
 }

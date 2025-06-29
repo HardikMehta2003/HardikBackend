@@ -17,7 +17,10 @@ const uploadFileCloudinary = async (localFilePath) => {
             resource_type:"auto"
         })
         // console.log("File Uploaded Succesfully",response.url);
-        fs.unlinkSync(localFilePath)
+        // Delete the file from the public/temp folder after uploading
+        if (localFilePath.startsWith("public/temp")) {
+            fs.unlinkSync(localFilePath);
+        }
         return response;
         console.log(response.url);
     } catch (error) {
