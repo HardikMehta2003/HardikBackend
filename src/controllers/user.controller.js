@@ -158,10 +158,76 @@ const logoutUser = asyncHandler(async(req,res)=>{
     .json(new ApiResponse(200,{},"User Logged Out"))
 
 });
+ 
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken;
 
+    if(!incomingRefreshToken){
+        throw new ApiError(401,"unautherized request");
+    }
+
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET);
+
+        const user = User.findById(decodedToken?._id);
+    
+        if(!user){
+            throw new ApiError(401,"Invalid Refresh Token");
+        }
+    
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401,"Refresh Token Expired or Used");
+        }
+    
+    
+        const options = {
+            httpOnly:true,
+            secure:true
+        }
+    
+        const {accessToken,newRefreshToken} =  await generatAccessAndRefreshToken(user._id);
+    
+        return res
+        .status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",newRefreshToken,options)
+        .json(
+            new ApiResponse(
+                200,
+                {accessToken,refreshToken:newRefreshToken},
+                "Access token refreshed"
+            )
+        )
+    } catch (error) {
+        console.log("Error in refreshAccessToken",error);
+        throw new ApiError(401,"Kuch gabad hai daya");
+        
+    }
+
+});
+
+const changeCurrentPassword = asyncHandler(async(req,res)=>{
+    const {oldPassword,newPassword} = req.body;
+    const user = await User.findById(req.user?._id);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+    if(!isPasswordCorrect){
+        throw ApiError(400,"Invalid old Password");
+
+    }
+
+    user.password = newPassword;
+    user.save({validationBeforeSave: false});
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,{},"Password changed Successfully"))
+})
 
 export {
     registerUser,
     loginUser,
+    refreshAccessToken,
+    changeCurrentPassword,
     logoutUser
 }
