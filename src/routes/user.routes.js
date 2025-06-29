@@ -6,7 +6,7 @@ import {
     refreshAccessToken, 
     changeCurrentPassword, 
     // getCurrentUser, 
-    // updateAccountDetails, 
+    updateAccountDetails, 
     // updateUserAvatar, 
     // updateCoverImage, 
     // getUserChannelProfile, 
@@ -34,4 +34,5 @@ router.route("/login").post(loginUser);
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/refresh-token").post(refreshAccessToken);
 router.route("/changePassword").post(verifyJWT, changeCurrentPassword);
+router.route("/updateAccountDetails").post(verifyJWT, updateAccountDetails);
 export default router;
