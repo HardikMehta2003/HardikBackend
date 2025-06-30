@@ -5,7 +5,6 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadFileCloudinary} from "../utils/cloudinary.js"
-import {getVideoDurationInSeconds} from 'get-video-duration'
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
